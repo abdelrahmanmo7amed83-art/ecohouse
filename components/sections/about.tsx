@@ -9,32 +9,32 @@ const teamMembers = [
   {
     name: "Abdelrahman Mohamed",
     email: "abdelrahman.1025090@stemoctober.moe.edu.eg",
-    role: "Project Lead",
-    image: "/portrait-of-abdelrahman.jpg",
+    role: "Researcher & Graphic Designer",
+    image: "/photo.png",
   },
   {
     name: "Abdullah Mohamed",
-    email: "abdullah.1025090@stemoctober.moe.edu.eg",
-    role: "Sustainability Lead",
+    email: "abdullah.1025094@stemoctober.moe.edu.eg",
+    role: "Researcher and Engineer",
     image: "/portrait-of-abdullah.jpg",
   },
   {
     name: "Adnan Amr",
-    email: "adnan.1025090@stemoctober.moe.edu.eg",
-    role: "Technical Architect",
+    email: "adnan.1025095@stemoctober.moe.edu.eg",
+    role: "Researcher and Engineer",
     image: "/portrait-of-adnan.jpg",
   },
   {
     name: "Hamza Ali",
     email: "hamza.1025090@stemoctober.moe.edu.eg",
-    role: "System Engineer",
+    role: "Researcher & Engineer",
     image: "/portrait-of-hamza.jpg",
   },
   {
     name: "David Maher",
     email: "david.1025090@stemoctober.moe.edu.eg",
-    role: "Structural Analyst",
-    image: "/portrait-of-david.png",
+    role: "Researcher and Engineer",
+    image: "/portrait-of-david.jpg",
   },
 ]
 
