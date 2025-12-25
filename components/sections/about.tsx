@@ -15,13 +15,13 @@ const teamMembers = [
   {
     name: "Abdullah Mohamed",
     email: "Abdullah.1025094@stemoctober.moe.edu.eg",
-    role: "Researcher and Engineer",
+    role: "Researcher & Engineer",
     image: "/portrait-of-abdullah.jpg",
   },
   {
     name: "Adnan Amr",
     email: "Adnan.1025095@stemoctober.moe.edu.eg",
-    role: "Researcher and Engineer",
+    role: "Researcher & Engineer",
     image: "/portrait-of-adnan.jpg",
   },
   {
@@ -33,7 +33,7 @@ const teamMembers = [
   {
     name: "David Maher",
     email: "David.1025078@stemoctober.moe.edu.eg",
-    role: "Researcher and Engineer",
+    role: "Researcher & Engineer",
     image: "/portrait-of-david.jpg",
   },
 ]
