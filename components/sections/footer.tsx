@@ -42,23 +42,6 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-display text-xl font-bold text-foreground mb-8">Resources</h4>
-            <ul className="space-y-4">
-              {["Documentation", "Sustainability Goals", "Material Science", "Safety Standards"].map((item) => (
-                <li key={item}>
-                  <a
-                    href="#"
-                    className="text-muted-foreground hover:text-eco-green transition-colors flex items-center gap-2 group"
-                  >
-                    <span className="w-0 h-px bg-eco-green transition-all duration-300 group-hover:w-4" />
-                    {item}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
             <h4 className="font-display text-xl font-bold text-foreground mb-8">Contact</h4>
             <ul className="space-y-6">
               <li className="flex items-start gap-4 group">
