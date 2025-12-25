@@ -34,7 +34,7 @@ const teamMembers = [
     name: "David Maher",
     email: "David.1025078@stemoctober.moe.edu.eg",
     role: "Researcher & Engineer",
-    image: "/portrait-of-david.jpg",
+    image: "/david.png",
   },
 ]
 
