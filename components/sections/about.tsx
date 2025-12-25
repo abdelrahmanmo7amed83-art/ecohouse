@@ -8,31 +8,31 @@ import Image from "next/image"
 const teamMembers = [
   {
     name: "Abdelrahman Mohamed",
-    email: "abdelrahman.1025090@stemoctober.moe.edu.eg",
+    email: "Abdelrahman.1025090@stemoctober.moe.edu.eg",
     role: "Researcher & Graphic Designer",
     image: "/photo.png",
   },
   {
     name: "Abdullah Mohamed",
-    email: "abdullah.1025094@stemoctober.moe.edu.eg",
+    email: "Abdullah.1025094@stemoctober.moe.edu.eg",
     role: "Researcher and Engineer",
     image: "/portrait-of-abdullah.jpg",
   },
   {
     name: "Adnan Amr",
-    email: "adnan.1025095@stemoctober.moe.edu.eg",
+    email: "Adnan.1025095@stemoctober.moe.edu.eg",
     role: "Researcher and Engineer",
     image: "/portrait-of-adnan.jpg",
   },
   {
     name: "Hamza Ali",
-    email: "hamza.1025090@stemoctober.moe.edu.eg",
+    email: "Hamza.1025090@stemoctober.moe.edu.eg",
     role: "Researcher & Engineer",
     image: "/portrait-of-hamza.jpg",
   },
   {
     name: "David Maher",
-    email: "david.1025090@stemoctober.moe.edu.eg",
+    email: "David.1025078@stemoctober.moe.edu.eg",
     role: "Researcher and Engineer",
     image: "/portrait-of-david.jpg",
   },
