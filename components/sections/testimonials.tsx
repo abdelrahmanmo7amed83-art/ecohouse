@@ -53,7 +53,7 @@ const defaultTestimonials = [
 ]
 
 export function Testimonials() {
-  const [testimonials, setTestimonials] = useState(defaultTestimonials)
+  const [allTestimonials, setAllTestimonials] = useState(defaultTestimonials)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
@@ -63,100 +63,89 @@ export function Testimonials() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const itemsPerPage = 3
+  const itemsPerPage = window.innerWidth >= 1024 ? 3 : window.innerWidth >= 768 ? 2 : 1
 
-  // Load testimonials from storage on mount
+  // Load testimonials from memory storage
   useEffect(() => {
-    const loadTestimonials = async () => {
-      if (typeof window === 'undefined' || !window.storage) return
-      
+    const stored = localStorage.getItem('ecohouse_testimonials')
+    if (stored) {
       try {
-        const stored = await window.storage.list("testimonial:", true)
-        if (stored && stored.keys && stored.keys.length > 0) {
-          const userTestimonials = []
-          for (const key of stored.keys) {
-            try {
-              const result = await window.storage.get(key, true)
-              if (result && result.value) {
-                userTestimonials.push(JSON.parse(result.value))
-              }
-            } catch (err) {
-              console.log("Error loading testimonial:", err)
-            }
-          }
-          if (userTestimonials.length > 0) {
-            setTestimonials([...defaultTestimonials, ...userTestimonials])
-          }
-        }
+        const userTestimonials = JSON.parse(stored)
+        setAllTestimonials([...defaultTestimonials, ...userTestimonials])
       } catch (error) {
-        console.log("No stored testimonials found:", error)
+        console.log("Error loading testimonials:", error)
       }
     }
-    loadTestimonials()
   }, [])
 
   // Auto-slide effect
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentIndex((prev) => {
-        const maxIndex = Math.max(0, testimonials.length - itemsPerPage)
+        const maxIndex = Math.max(0, allTestimonials.length - itemsPerPage)
         return prev >= maxIndex ? 0 : prev + 1
       })
     }, 10000)
 
     return () => clearInterval(timer)
-  }, [testimonials.length])
+  }, [allTestimonials.length, itemsPerPage])
 
   const handleNext = () => {
     setCurrentIndex((prev) => {
-      const maxIndex = Math.max(0, testimonials.length - itemsPerPage)
+      const maxIndex = Math.max(0, allTestimonials.length - itemsPerPage)
       return prev >= maxIndex ? 0 : prev + 1
     })
   }
 
   const handlePrev = () => {
     setCurrentIndex((prev) => {
-      const maxIndex = Math.max(0, testimonials.length - itemsPerPage)
+      const maxIndex = Math.max(0, allTestimonials.length - itemsPerPage)
       return prev <= 0 ? maxIndex : prev - 1
     })
   }
 
   const handleSubmit = (e) => {
-    e.preventDefault()
+    if (e) e.preventDefault()
+    
+    if (!formData.name.trim() || !formData.text.trim()) {
+      alert("Please fill in all fields")
+      return
+    }
+
     setIsSubmitting(true)
 
     const newTestimonial = {
       id: `user-${Date.now()}`,
-      name: formData.name,
-      avatar: formData.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2),
+      name: formData.name.trim(),
+      avatar: formData.name.trim().split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2),
       rating: formData.rating,
-      text: formData.text,
+      text: formData.text.trim(),
       highlight: "Community Member",
       isDefault: false
     }
 
     try {
-      // Store with shared=true so it's accessible to all users
-      window.storage.set(`testimonial:${newTestimonial.id}`, JSON.stringify(newTestimonial), true)
-        .then(() => {
-          setTestimonials([...testimonials, newTestimonial])
-          setFormData({ name: "", text: "", rating: 5 })
-          setShowForm(false)
-          setIsSubmitting(false)
-        })
-        .catch((error) => {
-          console.error("Storage error:", error)
-          alert("Failed to save testimonial. Please try again.")
-          setIsSubmitting(false)
-        })
+      // Get existing user testimonials from localStorage
+      const stored = localStorage.getItem('ecohouse_testimonials')
+      const existingTestimonials = stored ? JSON.parse(stored) : []
+      
+      // Add new testimonial
+      const updatedUserTestimonials = [...existingTestimonials, newTestimonial]
+      localStorage.setItem('ecohouse_testimonials', JSON.stringify(updatedUserTestimonials))
+      
+      // Update state
+      setAllTestimonials([...defaultTestimonials, ...updatedUserTestimonials])
+      setFormData({ name: "", text: "", rating: 5 })
+      setShowForm(false)
+      setIsSubmitting(false)
+      
+      alert("Thank you! Your testimonial has been added successfully!")
     } catch (error) {
       console.error("Failed to save testimonial:", error)
       alert("Failed to save testimonial. Please try again.")
       setIsSubmitting(false)
     }
   }
-
-  const visibleTestimonials = testimonials.slice(currentIndex, currentIndex + itemsPerPage)
 
   return (
     <section className="relative py-24 overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50">
@@ -210,108 +199,109 @@ export function Testimonials() {
         </motion.div>
 
         {/* Testimonials Slider */}
-        <div className="relative mb-12">
+        <div className="relative mb-12 px-12">
           <div className="overflow-hidden">
             <motion.div 
-              className="flex gap-8"
-              animate={{ x: 0 }}
-              transition={{ duration: 0.5 }}
+              className="flex gap-6"
+              animate={{ 
+                x: `-${currentIndex * (100 / itemsPerPage)}%` 
+              }}
+              transition={{ 
+                type: "spring",
+                stiffness: 300,
+                damping: 30
+              }}
             >
-              <AnimatePresence mode="popLayout">
-                {visibleTestimonials.map((testimonial) => (
-                  <motion.div
-                    key={testimonial.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.5 }}
-                    className="flex-shrink-0 w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.33rem)]"
-                  >
-                    <div className="group relative h-full">
-                      <div className="h-full bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-emerald-200">
-                        {/* Quote Icon */}
-                        <div className="absolute top-6 right-6 text-emerald-100 group-hover:text-emerald-200 transition-colors">
-                          <Quote className="w-12 h-12" />
-                        </div>
-
-                        {/* Rating */}
-                        <div className="flex gap-1 mb-4">
-                          {[...Array(testimonial.rating)].map((_, i) => (
-                            <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                          ))}
-                        </div>
-
-                        {/* Highlight Badge */}
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full mb-4">
-                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                          <span className="text-xs font-semibold text-emerald-700">{testimonial.highlight}</span>
-                        </div>
-
-                        {/* Testimonial Text */}
-                        <p className="text-gray-700 leading-relaxed mb-6 relative z-10 min-h-[120px]">
-                          "{testimonial.text}"
-                        </p>
-
-                        {/* Author Info */}
-                        <div className="flex items-center gap-4 pt-6 border-t border-gray-100">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold shadow-lg">
-                            {testimonial.avatar}
-                          </div>
-                          <div>
-                            <div className="font-bold text-gray-900">{testimonial.name}</div>
-                          </div>
-                        </div>
-
-                        {!testimonial.isDefault && (
-                          <div className="absolute top-3 left-3">
-                            <div className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
-                              New
-                            </div>
-                          </div>
-                        )}
+              {allTestimonials.map((testimonial) => (
+                <div
+                  key={testimonial.id}
+                  className="flex-shrink-0"
+                  style={{ width: `calc(${100 / itemsPerPage}% - ${(itemsPerPage - 1) * 24 / itemsPerPage}px)` }}
+                >
+                  <div className="group relative h-full">
+                    <div className="h-full bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-emerald-200">
+                      {/* Quote Icon */}
+                      <div className="absolute top-6 right-6 text-emerald-100 group-hover:text-emerald-200 transition-colors">
+                        <Quote className="w-12 h-12" />
                       </div>
+
+                      {/* Rating */}
+                      <div className="flex gap-1 mb-4">
+                        {[...Array(testimonial.rating)].map((_, i) => (
+                          <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                        ))}
+                      </div>
+
+                      {/* Highlight Badge */}
+                      <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full mb-4">
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                        <span className="text-xs font-semibold text-emerald-700">{testimonial.highlight}</span>
+                      </div>
+
+                      {/* Testimonial Text */}
+                      <p className="text-gray-700 leading-relaxed mb-6 relative z-10 min-h-[140px]">
+                        "{testimonial.text}"
+                      </p>
+
+                      {/* Author Info */}
+                      <div className="flex items-center gap-4 pt-6 border-t border-gray-100">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold shadow-lg">
+                          {testimonial.avatar}
+                        </div>
+                        <div>
+                          <div className="font-bold text-gray-900">{testimonial.name}</div>
+                        </div>
+                      </div>
+
+                      {!testimonial.isDefault && (
+                        <div className="absolute top-3 left-3">
+                          <div className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+                            New
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                  </div>
+                </div>
+              ))}
             </motion.div>
           </div>
 
           {/* Navigation Buttons */}
-          {testimonials.length > itemsPerPage && (
+          {allTestimonials.length > itemsPerPage && (
             <>
               <button
                 onClick={handlePrev}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white rounded-full p-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 text-emerald-600 z-10"
+                className="absolute left-0 top-1/2 -translate-y-1/2 bg-white rounded-full p-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 text-emerald-600 z-10"
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
               <button
                 onClick={handleNext}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white rounded-full p-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 text-emerald-600 z-10"
+                className="absolute right-0 top-1/2 -translate-y-1/2 bg-white rounded-full p-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 text-emerald-600 z-10"
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
             </>
           )}
-
-          {/* Pagination Dots */}
-          {testimonials.length > itemsPerPage && (
-            <div className="flex justify-center gap-2 mt-8">
-              {Array.from({ length: Math.ceil(testimonials.length / itemsPerPage) }).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentIndex(index)}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    Math.floor(currentIndex / itemsPerPage) === index
-                      ? "w-8 bg-emerald-600"
-                      : "w-2 bg-gray-300 hover:bg-gray-400"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
         </div>
+
+        {/* Pagination Dots */}
+        {allTestimonials.length > itemsPerPage && (
+          <div className="flex justify-center gap-2 mb-12">
+            {Array.from({ length: Math.ceil(allTestimonials.length / itemsPerPage) }).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentIndex(index * itemsPerPage)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  Math.floor(currentIndex / itemsPerPage) === index
+                    ? "w-8 bg-emerald-600"
+                    : "w-2 bg-gray-300 hover:bg-gray-400"
+                }`}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Add Testimonial Button */}
         <motion.div
