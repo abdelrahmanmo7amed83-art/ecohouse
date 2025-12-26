@@ -1,14 +1,13 @@
 "use client"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Star, Quote, Wind, Leaf, Shield, MessageSquarePlus, X, Sparkles } from "lucide-react"
+import { Star, Quote, Wind, Leaf, Shield, MessageSquarePlus, X, Sparkles, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const defaultTestimonials = [
   {
     id: "default-1",
     name: "Abdullah Elkholy",
-    role: "Structural Engineer",
     avatar: "AE",
     rating: 5,
     text: "The EcoHouse design demonstrates exceptional engineering. The passive cooling system reduces energy consumption by 40%, while the structural integrity easily withstands high wind loads and static pressures. This is sustainable architecture at its finest.",
@@ -18,7 +17,6 @@ const defaultTestimonials = [
   {
     id: "default-2",
     name: "Hady Amin",
-    role: "Environmental Consultant",
     avatar: "HA",
     rating: 5,
     text: "Working with the EcoHouse project has been inspiring. The integration of Rihan trees and sustainable materials creates a perfect harmony with nature. It's not just a house—it's a blueprint for the future of sustainable living.",
@@ -28,7 +26,6 @@ const defaultTestimonials = [
   {
     id: "default-3",
     name: "Omar Hesham",
-    role: "Construction Manager",
     avatar: "OH",
     rating: 5,
     text: "The construction quality and attention to detail in the EcoHouse project exceed industry standards. The thermal insulation and fire-resistant materials ensure long-term durability, while the design allows for efficient building processes.",
@@ -38,7 +35,6 @@ const defaultTestimonials = [
   {
     id: "default-4",
     name: "Hazem Ashraf",
-    role: "Renewable Energy Specialist",
     avatar: "HA",
     rating: 5,
     text: "The EcoHouse's energy efficiency is remarkable. The passive design combined with optimal orientation reduces reliance on active cooling by up to 60%. It's a perfect example of how smart design can drastically cut energy costs and carbon footprint.",
@@ -48,7 +44,6 @@ const defaultTestimonials = [
   {
     id: "default-5",
     name: "Abdelrahman Abdelrazek",
-    role: "Climate Adaptation Architect",
     avatar: "AA",
     rating: 5,
     text: "This project sets a new standard for climate-responsive architecture. The wind resistance capabilities and load-bearing design ensure safety without compromising sustainability. It's engineered to last generations while protecting our planet.",
@@ -59,49 +54,80 @@ const defaultTestimonials = [
 
 export function Testimonials() {
   const [testimonials, setTestimonials] = useState(defaultTestimonials)
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
-    role: "",
     text: "",
     rating: 5
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const itemsPerPage = 3
+
   // Load testimonials from storage on mount
   useEffect(() => {
     const loadTestimonials = async () => {
+      if (typeof window === 'undefined' || !window.storage) return
+      
       try {
-        const stored = await window.storage.list("testimonial:")
+        const stored = await window.storage.list("testimonial:", true)
         if (stored && stored.keys && stored.keys.length > 0) {
-          const userTestimonials = await Promise.all(
-            stored.keys.map(async (key) => {
-              try {
-                const result = await window.storage.get(key)
-                return result ? JSON.parse(result.value) : null
-              } catch {
-                return null
+          const userTestimonials = []
+          for (const key of stored.keys) {
+            try {
+              const result = await window.storage.get(key, true)
+              if (result && result.value) {
+                userTestimonials.push(JSON.parse(result.value))
               }
-            })
-          )
-          const validTestimonials = userTestimonials.filter(t => t !== null)
-          setTestimonials([...defaultTestimonials, ...validTestimonials])
+            } catch (err) {
+              console.log("Error loading testimonial:", err)
+            }
+          }
+          if (userTestimonials.length > 0) {
+            setTestimonials([...defaultTestimonials, ...userTestimonials])
+          }
         }
       } catch (error) {
-        console.log("No stored testimonials found")
+        console.log("No stored testimonials found:", error)
       }
     }
     loadTestimonials()
   }, [])
 
-  const handleSubmit = async (e) => {
+  // Auto-slide effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => {
+        const maxIndex = Math.max(0, testimonials.length - itemsPerPage)
+        return prev >= maxIndex ? 0 : prev + 1
+      })
+    }, 10000)
+
+    return () => clearInterval(timer)
+  }, [testimonials.length])
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => {
+      const maxIndex = Math.max(0, testimonials.length - itemsPerPage)
+      return prev >= maxIndex ? 0 : prev + 1
+    })
+  }
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) => {
+      const maxIndex = Math.max(0, testimonials.length - itemsPerPage)
+      return prev <= 0 ? maxIndex : prev - 1
+    })
+  }
+
+  const handleSubmit = (e) => {
     e.preventDefault()
     setIsSubmitting(true)
 
     const newTestimonial = {
       id: `user-${Date.now()}`,
       name: formData.name,
-      role: formData.role,
       avatar: formData.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2),
       rating: formData.rating,
       text: formData.text,
@@ -110,17 +136,27 @@ export function Testimonials() {
     }
 
     try {
-      await window.storage.set(`testimonial:${newTestimonial.id}`, JSON.stringify(newTestimonial))
-      setTestimonials([...testimonials, newTestimonial])
-      setFormData({ name: "", role: "", text: "", rating: 5 })
-      setShowForm(false)
+      // Store with shared=true so it's accessible to all users
+      window.storage.set(`testimonial:${newTestimonial.id}`, JSON.stringify(newTestimonial), true)
+        .then(() => {
+          setTestimonials([...testimonials, newTestimonial])
+          setFormData({ name: "", text: "", rating: 5 })
+          setShowForm(false)
+          setIsSubmitting(false)
+        })
+        .catch((error) => {
+          console.error("Storage error:", error)
+          alert("Failed to save testimonial. Please try again.")
+          setIsSubmitting(false)
+        })
     } catch (error) {
       console.error("Failed to save testimonial:", error)
       alert("Failed to save testimonial. Please try again.")
-    } finally {
       setIsSubmitting(false)
     }
   }
+
+  const visibleTestimonials = testimonials.slice(currentIndex, currentIndex + itemsPerPage)
 
   return (
     <section className="relative py-24 overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50">
@@ -173,64 +209,108 @@ export function Testimonials() {
           ))}
         </motion.div>
 
-        {/* Testimonials Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          <AnimatePresence>
-            {testimonials.map((testimonial, index) => (
-              <motion.div
-                key={testimonial.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="group relative"
-              >
-                <div className="h-full bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-emerald-200">
-                  {/* Quote Icon */}
-                  <div className="absolute top-6 right-6 text-emerald-100 group-hover:text-emerald-200 transition-colors">
-                    <Quote className="w-12 h-12" />
-                  </div>
+        {/* Testimonials Slider */}
+        <div className="relative mb-12">
+          <div className="overflow-hidden">
+            <motion.div 
+              className="flex gap-8"
+              animate={{ x: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <AnimatePresence mode="popLayout">
+                {visibleTestimonials.map((testimonial) => (
+                  <motion.div
+                    key={testimonial.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.5 }}
+                    className="flex-shrink-0 w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.33rem)]"
+                  >
+                    <div className="group relative h-full">
+                      <div className="h-full bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-emerald-200">
+                        {/* Quote Icon */}
+                        <div className="absolute top-6 right-6 text-emerald-100 group-hover:text-emerald-200 transition-colors">
+                          <Quote className="w-12 h-12" />
+                        </div>
 
-                  {/* Rating */}
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                    ))}
-                  </div>
+                        {/* Rating */}
+                        <div className="flex gap-1 mb-4">
+                          {[...Array(testimonial.rating)].map((_, i) => (
+                            <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                          ))}
+                        </div>
 
-                  {/* Highlight Badge */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full mb-4">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                    <span className="text-xs font-semibold text-emerald-700">{testimonial.highlight}</span>
-                  </div>
+                        {/* Highlight Badge */}
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full mb-4">
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                          <span className="text-xs font-semibold text-emerald-700">{testimonial.highlight}</span>
+                        </div>
 
-                  {/* Testimonial Text */}
-                  <p className="text-gray-700 leading-relaxed mb-6 relative z-10">
-                    "{testimonial.text}"
-                  </p>
+                        {/* Testimonial Text */}
+                        <p className="text-gray-700 leading-relaxed mb-6 relative z-10 min-h-[120px]">
+                          "{testimonial.text}"
+                        </p>
 
-                  {/* Author Info */}
-                  <div className="flex items-center gap-4 pt-6 border-t border-gray-100">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold shadow-lg">
-                      {testimonial.avatar}
-                    </div>
-                    <div>
-                      <div className="font-bold text-gray-900">{testimonial.name}</div>
-                      <div className="text-sm text-gray-600">{testimonial.role}</div>
-                    </div>
-                  </div>
+                        {/* Author Info */}
+                        <div className="flex items-center gap-4 pt-6 border-t border-gray-100">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold shadow-lg">
+                            {testimonial.avatar}
+                          </div>
+                          <div>
+                            <div className="font-bold text-gray-900">{testimonial.name}</div>
+                          </div>
+                        </div>
 
-                  {!testimonial.isDefault && (
-                    <div className="absolute top-3 left-3">
-                      <div className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
-                        New
+                        {!testimonial.isDefault && (
+                          <div className="absolute top-3 left-3">
+                            <div className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+                              New
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          </div>
+
+          {/* Navigation Buttons */}
+          {testimonials.length > itemsPerPage && (
+            <>
+              <button
+                onClick={handlePrev}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white rounded-full p-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 text-emerald-600 z-10"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                onClick={handleNext}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white rounded-full p-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 text-emerald-600 z-10"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </>
+          )}
+
+          {/* Pagination Dots */}
+          {testimonials.length > itemsPerPage && (
+            <div className="flex justify-center gap-2 mt-8">
+              {Array.from({ length: Math.ceil(testimonials.length / itemsPerPage) }).map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentIndex(index)}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    Math.floor(currentIndex / itemsPerPage) === index
+                      ? "w-8 bg-emerald-600"
+                      : "w-2 bg-gray-300 hover:bg-gray-400"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Add Testimonial Button */}
@@ -277,7 +357,7 @@ export function Testimonials() {
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Your Name
@@ -289,20 +369,6 @@ export function Testimonials() {
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all"
                       placeholder="John Doe"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Your Role/Title
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.role}
-                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all"
-                      placeholder="Sustainability Consultant"
                     />
                   </div>
 
@@ -354,14 +420,15 @@ export function Testimonials() {
                       Cancel
                     </Button>
                     <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-3 rounded-xl"
+                      type="button"
+                      onClick={handleSubmit}
+                      disabled={isSubmitting || !formData.name || !formData.text}
+                      className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting ? "Submitting..." : "Submit Testimonial"}
                     </Button>
                   </div>
-                </form>
+                </div>
               </motion.div>
             </motion.div>
           )}
