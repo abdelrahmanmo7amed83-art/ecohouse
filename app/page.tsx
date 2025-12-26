@@ -4,6 +4,7 @@ import { About } from "@/components/sections/about"
 import { Problems } from "@/components/sections/problems"
 import { Features } from "@/components/sections/features"
 import { Sustainability } from "@/components/sections/sustainability"
+import { Testimonials } from "@/components/sections/testimonials"
 import { Pricing } from "@/components/sections/pricing"
 import { PreRegistration } from "@/components/sections/pre-registration"
 import { Footer } from "@/components/sections/footer"
@@ -17,6 +18,7 @@ export default function Page() {
       <Problems />
       <Features />
       <Sustainability />
+      <Testimonials />
       <Pricing />
       <PreRegistration />
       <Footer />
