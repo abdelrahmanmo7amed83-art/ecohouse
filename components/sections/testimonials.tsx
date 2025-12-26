@@ -34,8 +34,8 @@ const defaultTestimonials = [
   },
   {
     id: "default-4",
-    name: "Hazem Ashraf",
-    avatar: "HA",
+    name: "Ahmed Haddad",
+    avatar: "AH",
     rating: 5,
     text: "The EcoHouse's energy efficiency is remarkable. The passive design combined with optimal orientation reduces reliance on active cooling by up to 60%. It's a perfect example of how smart design can drastically cut energy costs and carbon footprint.",
     highlight: "Energy Efficiency Pioneer",
